@@ -94,10 +94,10 @@ options {
 	}
 
     post {
-        always {
-            node('windows') {
-                bat 'chcp 65001 && docker logout'
-            }
+    
+        node('windows') {
+            bat 'chcp 65001 && docker logout'
+            
         }
     }
 }
