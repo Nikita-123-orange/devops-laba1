@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDS=credentials('devops-laba1')
+        DOCKERHUB_CREDS=credentials('docker')
         LC_ALL = "en_US.UTF-8"
         LANG    = "en_US.UTF-8"
         LANGUAGE = "en_US.UTF-8"
@@ -88,14 +88,14 @@ options {
 
         stage('Push'){
             steps{
-                bat 'chcp 65001 && docker push nikita123orange/devops-laba1:latest'
+                bat 'chcp 65001 && docker push nikita12/devops-laba1:latest'
             }
         }
 	}
 
     post {
         always {
-            node('any') {
+            node('windows') {
                 bat 'chcp 65001 && docker logout'
             }
         }
