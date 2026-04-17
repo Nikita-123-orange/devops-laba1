@@ -95,9 +95,9 @@ options {
 
     post {
         always {
-            
-            bat 'chcp 65001 && docker logout'
-            
+            node('any') {
+                bat 'chcp 65001 && docker logout'
+            }
         }
     }
 }
