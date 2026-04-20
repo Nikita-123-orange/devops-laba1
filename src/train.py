@@ -13,7 +13,7 @@ from sklearn.svm import SVC
 import sys
 import traceback
 
-from logger import Logger
+from src.logger import Logger
 
 SHOW_LOG = True
 
@@ -47,9 +47,9 @@ class MultiModel():
         self.log.info("MultiModel is ready")
 
     def log_reg(self, predict=False) -> bool:
-        classifier = LogisticRegression()
+        classifier = LogisticRegression(max_iter=100, solver='saga') # Возможно использование оптимизационного алгоритма lbfgs
         try:
-            classifier.fit(self.X_train, self.y_train)
+            classifier.fit(self.X_train, self.y_train.values.ravel())
         except Exception:
             self.log.error(traceback.format_exc())
             sys.exit(1)
@@ -185,8 +185,8 @@ class MultiModel():
 if __name__ == "__main__":
     multi_model = MultiModel()
     multi_model.log_reg(predict=True)
-    multi_model.rand_forest(use_config=False, predict=True)
-    multi_model.knn(use_config=False, predict=True)
-    multi_model.svm(use_config=False, predict=True)
-    multi_model.gnb(predict=True)
-    multi_model.d_tree(use_config=False, predict=True)
+    # multi_model.rand_forest(use_config=False, predict=True)
+    # multi_model.knn(use_config=False, predict=True)
+    # multi_model.svm(use_config=False, predict=True)
+    # multi_model.gnb(predict=True)
+    # multi_model.d_tree(use_config=False, predict=True)
