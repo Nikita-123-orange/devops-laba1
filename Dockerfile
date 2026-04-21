@@ -2,8 +2,13 @@ FROM python:3.14-slim
 
 ENV PYTHONUNBUFFERED 1
 
-WORKDIR /app
+WORKDIR /
 
-ADD . /app
+# Сначала копируем только requirements.txt (для кэширования слоя с зависимостями)
+COPY requirements.txt .
 
-RUN pip install -r requirements.txt
+# Устанавливаем зависимости
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копируем весь остальной код
+COPY . .
