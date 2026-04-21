@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(1, os.path.join(os.getcwd(), "src"))
 
-from preprocess import DataMaker
+from src.preprocess import DataMaker
 
 config = configparser.ConfigParser()
 config.read("config.ini")
