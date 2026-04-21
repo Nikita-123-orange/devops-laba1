@@ -51,7 +51,7 @@ options {
     post {
         always {
             node('windows') {
-                bat 'docker stop devops-laba1-web && docker logout'
+                bat 'docker logout'
             }
         }
     }
