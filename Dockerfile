@@ -2,7 +2,7 @@ FROM python:3.14-slim
 
 ENV PYTHONUNBUFFERED 1
 
-WORKDIR /
+WORKDIR / app
 
 # Сначала копируем только requirements.txt (для кэширования слоя с зависимостями)
 COPY requirements.txt .

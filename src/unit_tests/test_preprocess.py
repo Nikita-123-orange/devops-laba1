@@ -1,6 +1,7 @@
 import configparser
 import os
 import unittest
+from unittest.mock import patch
 import pandas as pd
 import sys
 
@@ -16,6 +17,8 @@ class TestDataMaker(unittest.TestCase):
 
     def setUp(self) -> None:
         self.data_maker = DataMaker()
+        
+        
 
     def test_get_data(self):
         self.assertEqual(self.data_maker.get_data(), True)
@@ -26,7 +29,7 @@ class TestDataMaker(unittest.TestCase):
     def test_save_splitted_data(self):
         self.assertEqual(self.data_maker.save_splitted_data(pd.read_csv(
             config["DATA"]["x_data"], index_col=0), config["DATA"]["x_data"]), True)
-
+            
 
 if __name__ == "__main__":
     unittest.main()
