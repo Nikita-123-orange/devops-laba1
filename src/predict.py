@@ -20,7 +20,7 @@ SHOW_LOG = True
 
 class Predictor():
 
-    def __init__(self, model: str = "LOG_REG", test_type: str = "smoke") -> None:
+    def __init__(self, model: str = "LOG_REG", test_type: str = "func") -> None:
         logger = Logger(SHOW_LOG)
         self.config = configparser.ConfigParser()
         self.log = logger.get_logger(__name__)
@@ -44,7 +44,7 @@ class Predictor():
 
     def predict(self) -> tuple[str, float]:
         classifier = self.model
-        self.log.info(f"Loaded model {self.model_name} from {self.config[self.model_name]['path']}")
+        self.log.info(f"Загружена модель {self.model_name} из {self.config[self.model_name]['path']}")
         scores = {}
         if self.test_type == "smoke":
             try:
@@ -62,7 +62,7 @@ class Predictor():
                     "recall": recall
                 }
                 
-                self.log.info(f'{self.config[self.model_name]["path"]} passed smoke tests')
+                self.log.info(f'{self.config[self.model_name]["path"]} прошел smoke тест')
                 return self.model_name, acc
             except Exception as e:
                 self.log.error(traceback.format_exc())
