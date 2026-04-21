@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import sys
 import traceback
-
+import zipfile
 from src.logger import Logger
 
 TEST_SIZE = 0.2
@@ -12,21 +12,51 @@ SHOW_LOG = True
 
 
 class DataMaker():
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(self) -> None:
-        logger = Logger(SHOW_LOG)
-        self.config = configparser.ConfigParser()
-        self.log = logger.get_logger(__name__)
-        self.project_path = os.path.join(os.getcwd(), "data")
-        self.data_path = os.path.join(self.project_path, "fashion_mnist.csv")
-        self.X_path = os.path.join(self.project_path, "fashion_mnist_x.csv")
-        self.y_path = os.path.join(self.project_path, "fashion_mnist_y.csv")
-        self.train_path = [os.path.join(self.project_path, "train_fashion_mnist_x.csv"), os.path.join(
-            self.project_path, "train_fashion_mnist_y.csv")]
-        self.test_path = [os.path.join(self.project_path, "test_fashion_mnist_x.csv"), os.path.join(
-            self.project_path, "test_fashion_mnist_y.csv")]
-        self.log.info("DataMaker is ready")
+        if not self._initialized:
+            logger = Logger(SHOW_LOG)
+            self.config = configparser.ConfigParser()
+            self.log = logger.get_logger(__name__)
+            self.project_path = os.path.join(os.getcwd(), "data")
+            self.zip_path = os.path.join(self.project_path, "fashion_mnist.zip")
+            self._check_and_extract_zip()
 
+            self.data_path = os.path.join(self.project_path, "fashion_mnist.csv")
+            self.X_path = os.path.join(self.project_path, "fashion_mnist_x.csv")
+            self.y_path = os.path.join(self.project_path, "fashion_mnist_y.csv")
+            self.train_path = [os.path.join(self.project_path, "train_fashion_mnist_x.csv"), os.path.join(
+                self.project_path, "train_fashion_mnist_y.csv")]
+            self.test_path = [os.path.join(self.project_path, "test_fashion_mnist_x.csv"), os.path.join(
+                self.project_path, "test_fashion_mnist_y.csv")]
+            self.log.info("DataMaker is ready")
+            self._initialized = True
+
+    def _check_and_extract_zip(self):
+        """Проверяет наличие CSV файлов и распаковывает архив при необходимости"""
+        if os.path.exists(self.zip_path):
+            self.log.info(f"Найден архив {self.zip_path}, начинаю распаковку...")
+            try:
+                with zipfile.ZipFile(self.zip_path, 'r') as zip_ref:
+                    original_name = zip_ref.namelist()[0]
+                    zip_ref.extract(original_name, self.project_path)
+                    os.rename(
+                        os.path.join(self.project_path, original_name),
+                        os.path.join(self.project_path, 'fashion_mnist.csv')
+                    )
+                self.log.info("Архив успешно распакован")
+            except Exception as e:
+                self.log.error(f"Ошибка при распаковке архива: {e}")
+        else:
+            self.log.warning(f"Не найден ZIP архив в {self.project_path}")
+    
     def get_data(self) -> bool:
         dataset = pd.read_csv(self.data_path)
         X = pd.DataFrame(dataset.iloc[:, 1:].values)
@@ -43,6 +73,7 @@ class DataMaker():
             return False
 
     def split_data(self, test_size=TEST_SIZE) -> bool:
+        self.log.info(self.project_path)
         self.get_data()
         try:
             X = pd.read_csv(self.X_path)

@@ -3,7 +3,7 @@ from typing import Any
 from fastapi import APIRouter
 from datetime import datetime
 from src.predict import Predictor
-from src.train import MultiModel
+from src.train import Model
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 PREFIX  = "/model"
