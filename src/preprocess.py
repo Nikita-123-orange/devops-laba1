@@ -36,7 +36,7 @@ class DataMaker():
                 self.project_path, "train_fashion_mnist_y.csv")]
             self.test_path = [os.path.join(self.project_path, "test_fashion_mnist_x.csv"), os.path.join(
                 self.project_path, "test_fashion_mnist_y.csv")]
-            self.log.info("DataMaker is ready")
+            self.log.info(f"{self.__class__.__name__} is ready")
             self._initialized = True
 
     def _check_and_extract_zip(self):
@@ -65,7 +65,7 @@ class DataMaker():
         y.to_csv(self.y_path, index=False)
         if os.path.isfile(self.X_path) and os.path.isfile(self.y_path):
             self.log.info("X and y data is ready")
-            self.config["DATA"] = {'X_data': self.X_path,
+            self.config["DATA"] = {'x_data': self.X_path,
                                    'y_data': self.y_path}
             return os.path.isfile(self.X_path) and os.path.isfile(self.y_path)
         else:
@@ -87,9 +87,9 @@ class DataMaker():
         self.save_splitted_data(y_train, self.train_path[1])
         self.save_splitted_data(X_test, self.test_path[0])
         self.save_splitted_data(y_test, self.test_path[1])
-        self.config["SPLIT_DATA"] = {'X_train': self.train_path[0],
+        self.config["SPLIT_DATA"] = {'x_train': self.train_path[0],
                                      'y_train': self.train_path[1],
-                                     'X_test': self.test_path[0],
+                                     'x_test': self.test_path[0],
                                      'y_test': self.test_path[1]}
         self.log.info("Train and test data is ready")
         with open('config.ini', 'w') as configfile:
