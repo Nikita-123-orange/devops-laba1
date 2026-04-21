@@ -32,12 +32,12 @@ options {
         }
 
         stage('Remove old container') {
-                    steps {
-                        script {
-                            bat '(docker stop devops-laba1-web || exit 0) && (docker rm devops-laba1-web || exit 0)'
-                        }
-                    }
+            steps {
+                script {
+                    bat '(docker stop devops-laba1-web || exit 0) && (docker rm devops-laba1-web || exit 0)'
                 }
+            }
+        }
 
         stage('Run container'){
             steps{
