@@ -92,12 +92,10 @@ options {
             }
         }
 
-        stage('Sign image with Cosign') {
-            steps {
-                bat 'cosign sign --key cosign.key nikita123orange/devops-laba1:latest'
-            }
-        }
+        
 
+        
+	}
 
     post {
         always {
