@@ -98,39 +98,6 @@ options {
             }
         }
 
-        stage('Generate DevSecOps artifact') {
-            steps {
-                dir("devops-laba1") {
-                    script {
-                        // 1. Получить хэши последних 5 коммитов
-                        def commits = bat(script: 'git log -5 --format="%%H"', returnStdout: true).trim().split('\n')
-                        // 2. Получить digest образа (после пуша)
-                        def digest = bat(script: 'docker inspect nikita123orange/devops-laba1:latest --format="{{.RepoDigests}}"', returnStdout: true).trim()
-                        // 3. (Опционально) Получить coverage, если есть файл
-                        def coverage = "N/A"
-                        if (fileExists('coverage.json')) {
-                            coverage = bat(script: 'powershell -Command "(Get-Content coverage.json | ConvertFrom-Json).totals.percent_covered_display"', returnStdout: true).trim()
-                        }
-                        // 4. Сформировать YAML
-                        writeFile file: 'dev_sec_ops.yml', text: """
-        version: "1.0"
-        generated_at: "${new Date().toISOString()}"
-        docker_image:
-        name: "nikita123orange/devops-laba1:latest"
-        digest: ${digest}
-        code_commits:
-        last_5_hashes:
-            - ${commits.join('\n    - ')}
-        test_coverage:
-        percent: ${coverage}
-        """
-                        // 5. Сохранить как артефакт (опционально)
-                        archiveArtifacts artifacts: 'dev_sec_ops.yml'
-                    }
-                }
-            }
-        }
-	}
 
     post {
         always {
