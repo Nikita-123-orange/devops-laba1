@@ -20,7 +20,7 @@ SHOW_LOG = True
 
 class Predictor():
 
-    def __init__(self, model: str = "LOG_REG", test_type: str = "func") -> None:
+    def __init__(self, model: str = "LOG_REG", test_type: str = "smoke") -> None:
         logger = Logger(SHOW_LOG)
         self.config = configparser.ConfigParser()
         self.log = logger.get_logger(__name__)
