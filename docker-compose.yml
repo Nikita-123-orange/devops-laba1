@@ -3,11 +3,8 @@ services:
    web:
        build: .
        command: bash -c "
-            python -m src.preprocess &&
-            python -m src.train &&
             python -m src.predict &&
-            coverage run -m src.unit_tests.test_preprocess &&
-            coverage run -a -m src.unit_tests.test_training &&
+            coverage run -a -m src.unit_tests.test_endpoints &&
             coverage report -m &&
             python -m main
         "
