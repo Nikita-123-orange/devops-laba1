@@ -33,9 +33,9 @@ class Predictor():
             raise RuntimeError(f"Model file not found: {self.config[model]['path']}") from e
         self.test_type = test_type
 
-        self.X_train = pd.read_csv(self.config["SPLIT_DATA"]["X_train"], index_col=0)
+        self.X_train = pd.read_csv(self.config["SPLIT_DATA"]["x_train"], index_col=0)
         self.y_train = pd.read_csv(self.config["SPLIT_DATA"]["y_train"], index_col=0)
-        self.X_test = pd.read_csv(self.config["SPLIT_DATA"]["X_test"], index_col=0)
+        self.X_test = pd.read_csv(self.config["SPLIT_DATA"]["x_test"], index_col=0)
         self.y_test = pd.read_csv(self.config["SPLIT_DATA"]["y_test"], index_col=0)
         self.sc = StandardScaler()
         self.X_train = self.sc.fit_transform(self.X_train)

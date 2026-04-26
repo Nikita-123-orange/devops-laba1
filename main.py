@@ -10,7 +10,6 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# Регистрируем роутеры
 app.include_router(health_router)
 app.include_router(test_router)
 
