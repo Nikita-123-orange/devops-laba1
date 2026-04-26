@@ -72,7 +72,13 @@ async def predict_from_image(file: UploadFile = File(...)) -> dict[str, Any]:
 
         # Обработка в зависимости от расширения файла
         if file.filename.endswith('.csv'):
-            df = pd.read_csv(io.StringIO(contents.decode('utf-8')))
+            try:
+                df = pd.read_csv(io.StringIO(contents.decode('utf-8')))
+            except pd.errors.EmptyDataError:
+                raise HTTPException(400, "CSV-файл пуст или не содержит данных")
+            except UnicodeDecodeError:
+                raise HTTPException(400, "Некорректная кодировка CSV-файла")
+            
             if df.empty:
                 raise HTTPException(400, "CSV-файл пуст")
             features = df.values

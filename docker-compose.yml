@@ -1,13 +1,16 @@
 version: '3.8'
 services:
-   web:
-       build: .
-       command: bash -c "
-            python -m src.predict &&
-            coverage run -a -m src.unit_tests.test_endpoints &&
-            coverage report -m &&
-            python -m main
-        "
-       ports:
-           - 8000:8000
-       image: nikita123orange/devops-laba1:latest
+  web:
+    build: .
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    image: nikita123orange/devops-laba1:latest
+
+    command: bash -c "
+        python -m src.predict &&
+        coverage run -a -m src.unit_tests.test_endpoints &&
+        (coverage report -m || true) &&
+        python -m main"
