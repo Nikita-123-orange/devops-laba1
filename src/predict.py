@@ -41,78 +41,131 @@ class Predictor():
         self.X_train = self.sc.fit_transform(self.X_train)
         self.X_test = self.sc.transform(self.X_test)
         self.log.info("Predictor is ready")
+        
+    def metrics_calculation(self, y_true, y_pred) -> dict[str, float]:
+        acc = accuracy_score(y_true, y_pred)
+        f1 = f1_score(y_true, y_pred, average='weighted')
+        precision = precision_score(y_true, y_pred, average='weighted')
+        recall = recall_score(y_true, y_pred, average='weighted')
+        
+        scores = {
+            "accuracy": float(acc),
+            "f1_score": float(f1),
+            "precision": float(precision),
+            "recall": float(recall)
+        }
+        return scores
 
-    def predict(self) -> tuple[str, float]:
-        classifier = self.model
-        self.log.info(f"Загружена модель {self.model_name} из {self.config[self.model_name]['path']}")
-        scores = {}
-        if self.test_type == "smoke":
-            try:
-                y_pred = classifier.predict(self.X_test)
-                y_true = self.y_test.values.ravel()
-                
-                acc = accuracy_score(y_true, y_pred)
-                f1 = f1_score(y_true, y_pred, average='weighted')
-                precision = precision_score(y_true, y_pred, average='weighted')
-                recall = recall_score(y_true, y_pred, average='weighted')
-                scores = {
-                    "accuracy": acc,
-                    "f1_score": f1,
-                    "precision": precision,
-                    "recall": recall
-                }
-                
-                self.log.info(f'{self.config[self.model_name]["path"]} прошел smoke тест')
-                return self.model_name, acc
-            except Exception as e:
-                self.log.error(traceback.format_exc())
-                raise RuntimeError(f"Smoke test failed: {e}") from e
+    def smoke_test(self) -> tuple[str, dict]:
+        """Smoke test: быстрая проверка на training data."""
+        try:
+            classifier = self.model
+            self.log.info(f"Начало smoke теста для модели {self.model_name}")
+            
+            y_pred = classifier.predict(self.X_test)
+            y_true = self.y_test.values.ravel()
+            
+            scores = self.metrics_calculation(y_true, y_pred)
+            
+            self.log.info(f'Модель {self.model_name} прошла smoke тест. Scores: {scores}')
+            return self.model_name, scores
+        except Exception as e:
+            self.log.error(traceback.format_exc())
+            raise RuntimeError(f"Smoke test failed: {e}") from e
 
-        elif self.test_type == "func":
+    def functional_test(self) -> tuple[str, dict]:
+        """Functional test: тестирование на всех JSON файлах из директории tests."""
+        try:
+            classifier = self.model
+            self.log.info(f"Начало functional теста для модели {self.model_name}")
+            
             tests_path = os.path.join(os.getcwd(), "tests")
-            exp_path = os.path.join(os.getcwd(), "experiments")
             if not os.path.exists(tests_path):
                 raise RuntimeError(f"Tests directory not found: {tests_path}")
-            test_files = os.listdir(tests_path)
+            
+            # Фильтруем только JSON файлы
+            test_files = [f for f in os.listdir(tests_path) if f.endswith('.json')]
             if not test_files:
-                raise RuntimeError("No test files found in tests directory")
+                raise RuntimeError("No JSON test files found in tests directory")
+            
+            self.log.info(f"Найдено {len(test_files)} JSON файлов для тестирования")
+            
             y_true_array = []
             y_pred_array = []
-            acc_array = []
-            f1_array = []
-            for test in test_files:
-                test_file_path = os.path.join(tests_path, test)
-                with open(test_file_path) as f:
-                    try:
+            
+            for test_file in sorted(test_files):
+                test_file_path = os.path.join(tests_path, test_file)
+                try:
+                    with open(test_file_path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         X = self.sc.transform(pd.json_normalize(data, record_path=['X']).values)
                         y_true = pd.json_normalize(data, record_path=['y']).iloc[:, 0].astype(int).values
                         y_pred = classifier.predict(X)
-                        y_true_array.append(y_true)
-                        y_pred_array.append(y_pred)
-                        
-                    except Exception as e:
-                        self.log.error(traceback.format_exc())
-                        raise RuntimeError(f"Functional test failed for {test}: {e}") from e
+                        y_true_array.extend(y_true)
+                        y_pred_array.extend(y_pred)
+                        self.log.info(f"  Обработан файл: {test_file}")
+                except (json.JSONDecodeError, KeyError) as e:
+                    self.log.warning(f"Пропущен файл {test_file}: {str(e)}")
+                    continue
+                except Exception as e:
+                    self.log.error(f"Ошибка при обработке {test_file}: {traceback.format_exc()}")
+                    raise RuntimeError(f"Functional test failed for {test_file}: {e}") from e
+            
+            if not y_true_array:
+                raise RuntimeError("No valid test data processed")
+            
+            scores = self.metrics_calculation(y_true_array, y_pred_array)
+            self.log.info(f'Модель {self.model_name} прошла Functional тест. Scores: {scores}')
+            
+            return self.model_name, scores
+        except Exception as e:
+            self.log.error(traceback.format_exc())
+            raise RuntimeError(f"Functional test failed: {e}") from e
 
-                    exp_data = {
-                        "model": self.model_name,
-                        "model params": dict(self.config.items(self.model_name)),
-                        "tests": self.test_type,
-                        "X_test path": self.config["SPLIT_DATA"]["X_test"],
-                        "y_test path": self.config["SPLIT_DATA"]["y_test"],
-                    }
-                    date_time = datetime.fromtimestamp(time.time())
-                    str_date_time = date_time.strftime("%Y_%m_%d_%H_%M_%S")
-                    exp_dir = os.path.join(exp_path, f'exp_{test[:6]}_{str_date_time}')
-                    os.mkdir(exp_dir)
-                    with open(os.path.join(exp_dir, "exp_config.yaml"), 'w') as exp_f:
-                        yaml.safe_dump(exp_data, exp_f, sort_keys=False)
-                    shutil.copy(os.path.join(os.getcwd(), "logfile.log"), os.path.join(exp_dir, "exp_logfile.log"))
-                    shutil.copy(self.config[self.model_name]["path"], os.path.join(exp_dir, f'exp_{self.model_name}.sav'))
-            acc = accuracy_score(y_true_array, y_pred_array)
-            return self.model_name, float(acc)
+    def predict_from_features(self, features: np.ndarray) -> tuple[int, float]:
+        """Predict класс на основе признаков.
+        
+        Args:
+            features: numpy array с признаками (может быть 1D или 2D)
+            model_name: имя модели (используется для логирования)
+        
+        Returns:
+            tuple: (predicted_class, confidence)
+        """
+        try:
+            # Убедимся, что features - это 2D array
+            if len(features.shape) == 1:
+                features = features.reshape(1, -1)
+            
+            # Проверяем правильность размеров
+            if features.shape[1] != 784:
+                self.log.warning(f"Feature count mismatch: got {features.shape[1]}, expected 784")
+            
+            # Масштабируем признаки
+            features_scaled = self.sc.transform(features)
+            
+            # Делаем предсказание
+            prediction = self.model.predict(features_scaled)[0]
+            
+            # Получаем confidence
+            confidence = 0.0
+            if hasattr(self.model, 'predict_proba'):
+                proba = self.model.predict_proba(features_scaled)
+                confidence = float(np.max(proba))
+            
+            self.log.info(f"Предсказание: класс {prediction}, confidence: {confidence:.4f}")
+            return int(prediction), confidence
+        except Exception as e:
+            self.log.error(traceback.format_exc())
+            raise RuntimeError(f"Prediction failed: {e}") from e
 
+    def predict(self) -> tuple[str, dict]:
+        """Legacy method for backward compatibility."""
+        if self.test_type == "smoke":
+            return self.smoke_test()
+        elif self.test_type == "func":
+            model_name, acc = self.functional_test()
+            return model_name, {"accuracy": acc}
         else:
             self.log.error(f'Unknown test type: {self.test_type}')
             raise ValueError(f"Unknown test type: {self.test_type}")
