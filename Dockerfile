@@ -2,7 +2,7 @@ FROM python:3.14-slim
 
 ENV PYTHONUNBUFFERED 1
 
-WORKDIR / app
+WORKDIR / devops-laba1
 
 # Сначала копируем только requirements.txt (для кэширования слоя с зависимостями)
 COPY requirements.txt .
