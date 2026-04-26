@@ -1,14 +1,15 @@
 from typing import Any
 from fastapi import APIRouter, HTTPException, File, UploadFile
 from datetime import datetime
-from pydantic import BaseModel
 import io
 import numpy as np
 import pandas as pd
 from PIL import Image
 
+from src.api.model.test import TestResponse, PredictionResponse
 from src.predict import Predictor
 from src.logger import Logger
+
 
 SHOW_LOG = True
 MODEL = "LOG_REG"
@@ -17,22 +18,7 @@ logger = Logger(SHOW_LOG).get_logger(__name__)
 router = APIRouter(prefix="/test", tags=["testing"])
 
 
-class PredictionResponse(BaseModel):
-    """Модель ответа предсказания."""
-    status: str
-    datetime: str
-    model: str
-    message: str = ""
-    scores: dict
 
-
-class TestResponse(BaseModel):
-    """Модель ответа тестирования."""
-    status: str
-    datetime: str
-    model: str
-    test_type: str
-    scores: dict
 
 
 @router.post("/smoke", response_model=TestResponse)
