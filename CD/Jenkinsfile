@@ -42,7 +42,7 @@ options {
         stage('Run container'){
             steps{
                 bat '''
-                        docker run --name devops-laba1-web -p 8000:8000 -d nikita123orange/devops-laba1:latest
+                        docker run --name devops-laba1-web-1 -p 8000:8000 -d nikita123orange/devops-laba1:latest
                 '''
             }
         }
