@@ -12,5 +12,4 @@ services:
     command: bash -c "
         python -m src.predict &&
         coverage run -a -m src.unit_tests.test_endpoints &&
-        (coverage report -m || true) &&
-        python -m main"
+        (coverage report -m || true)"

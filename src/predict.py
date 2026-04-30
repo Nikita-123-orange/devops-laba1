@@ -23,10 +23,9 @@ class Predictor():
         self.model_name = model
         self.root_dir = os.getcwd()
 
-        # получаем относительный путь из конфига и делаем абсолютным
+        # --- загрузка модели ---
         model_rel_path = self.config[model]["path"].replace('\\', '/')
         model_abs_path = os.path.join(self.root_dir, model_rel_path)
-
         try:
             with open(model_abs_path, "rb") as f:
                 self.model = pickle.load(f)
@@ -36,20 +35,26 @@ class Predictor():
 
         self.test_type = test_type
 
-        # читаем данные по относительным путям
-        x_train_path = os.path.join(self.root_dir, self.config["SPLIT_DATA"]["x_train"])
-        y_train_path = os.path.join(self.root_dir, self.config["SPLIT_DATA"]["y_train"])
+        # --- загрузка тестовых данных ---
         x_test_path = os.path.join(self.root_dir, self.config["SPLIT_DATA"]["x_test"])
         y_test_path = os.path.join(self.root_dir, self.config["SPLIT_DATA"]["y_test"])
-
-        self.X_train = pd.read_csv(x_train_path, index_col=0)
-        self.y_train = pd.read_csv(y_train_path, index_col=0)
         self.X_test = pd.read_csv(x_test_path, index_col=0)
         self.y_test = pd.read_csv(y_test_path, index_col=0)
 
-        self.sc = StandardScaler()
-        self.X_train = self.sc.fit_transform(self.X_train)
+        # --- загрузка обученного StandardScaler (вместо создания нового) ---
+        try:
+            scaler_rel_path = self.config["SCALER"]["path"].replace('\\', '/')
+            scaler_abs_path = os.path.join(self.root_dir, scaler_rel_path)
+            with open(scaler_abs_path, "rb") as f:
+                self.sc = pickle.load(f)
+            self.log.info(f"StandardScaler loaded from {scaler_abs_path}")
+        except (KeyError, FileNotFoundError) as e:
+            self.log.error("SCALER section not found in config.ini or scaler file missing. Run train.py first.")
+            raise RuntimeError("Missing fitted StandardScaler") from e
+
+        # --- масштабирование тестовых данных ---
         self.X_test = self.sc.transform(self.X_test)
+
         self.log.info("Predictor is ready")
 
     def metrics_calculation(self, y_true, y_pred) -> dict[str, float]:
@@ -143,5 +148,4 @@ class Predictor():
 
 if __name__ == "__main__":
     predictor = Predictor()
-    # пример вызова smoke теста
     predictor.smoke_test()

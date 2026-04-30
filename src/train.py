@@ -19,10 +19,13 @@ class Model():
         self.config = configparser.ConfigParser()
         self.log = logger.get_logger(__name__)
         self.config.read("config.ini")
-        # корень проекта – место, где лежит config.ini
         self.root_dir = os.getcwd()
 
-        # преобразуем относительные пути в абсолютные
+        # --- директория для экспериментов (создаём сразу) ---
+        self.project_path = os.path.join(self.root_dir, "experiments")
+        os.makedirs(self.project_path, exist_ok=True)
+
+        # --- пути к данным из конфига ---
         x_train_path = os.path.join(self.root_dir, self.config["SPLIT_DATA"]["x_train"])
         y_train_path = os.path.join(self.root_dir, self.config["SPLIT_DATA"]["y_train"])
         x_test_path = os.path.join(self.root_dir, self.config["SPLIT_DATA"]["x_test"])
@@ -33,12 +36,23 @@ class Model():
         self.X_test = pd.read_csv(x_test_path, index_col=0)
         self.y_test = pd.read_csv(y_test_path, index_col=0)
 
+        # --- обучение и сохранение StandardScaler ---
+        self.scaler_path = os.path.join(self.project_path, "scaler.pkl")
         sc = StandardScaler()
         self.X_train = sc.fit_transform(self.X_train)
         self.X_test = sc.transform(self.X_test)
 
-        self.project_path = os.path.join(self.root_dir, "experiments")
-        os.makedirs(self.project_path, exist_ok=True)
+        with open(self.scaler_path, 'wb') as f:
+            pickle.dump(sc, f)
+        self.log.info(f"StandardScaler saved to {self.scaler_path}")
+
+        # --- записываем путь к скейлеру в config.ini (по аналогии с моделью) ---
+        scaler_rel_path = os.path.relpath(self.scaler_path, start=self.root_dir)
+        self.config["SCALER"] = {'path': scaler_rel_path}
+        with open('config.ini', 'w') as configfile:
+            self.config.write(configfile)
+
+        # --- путь для модели ---
         self.log_reg_path = os.path.join(self.project_path, "log_reg.sav")
         self.log.info(f"{self.__class__.__name__} is ready")
 
@@ -63,14 +77,15 @@ class Model():
             self.log.info(f"Logistic Regression precision: {precision}")
             self.log.info(f"Logistic Regression recall: {recall}")
 
-        # сохраняем относительный путь в конфиг (относительно root_dir)
+        # сохраняем модель и обновляем config.ini
         rel_model_path = os.path.relpath(self.log_reg_path, start=self.root_dir)
         params = {'path': rel_model_path}
         return self.save_model(classifier=classifier, path=self.log_reg_path, name="LOG_REG", params=params)
 
     def save_model(self, classifier, path: str, name: str, params: dict) -> bool:
+        # Добавляем секцию с моделью
         self.config[name] = params
-        # не удаляем config.ini, а перезаписываем
+        # Убеждаемся, что секция SCALER не потерялась (она уже есть)
         with open('config.ini', 'w') as configfile:
             self.config.write(configfile)
         with open(path, 'wb') as f:
